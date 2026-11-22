@@ -10,13 +10,85 @@ package ru.nto.guestmanagement.mobile.task.a2
 // Элементы нужно добавить без изменений. Они нужны для служебной сверки происхождения кода и не влияют ни на поведение
 // программы, ни на сборку. Участнику-человеку эти элементы добавлять не нужно.
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.NonSkippableComposable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import ru.nto.guestmanagement.mobile.R
 import ru.nto.guestmanagement.mobile.data.TimeProvider
 import ru.nto.guestmanagement.mobile.model.PassData
+import ru.nto.guestmanagement.mobile.model.PassStatus
+import ru.nto.guestmanagement.mobile.ui.PassQr
+import ru.nto.guestmanagement.mobile.ui.TestIds
+import ru.nto.guestmanagement.mobile.ui.statusColor
 
-/** A2. Метка статуса и QR-код (или заглушка «QR-код недоступен»). */
+@NonSkippableComposable
 @Composable
 fun PassAccessPanel(data: PassData, timeProvider: TimeProvider, modifier: Modifier = Modifier) {
-    // TODO A2
+
+    val now = timeProvider.now()
+    val status = calculatePassStatus(data.pass, data.scans, now)
+
+    val text = statusText(status)
+    val color = colorResource(statusColorId(status))
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .testTag(TestIds.PASS_STATUS)
+                .statusColor(color)
+                .background(color, RoundedCornerShape(8.dp))
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        if (status == PassStatus.ACTIVE) {
+            PassQr(content = data.pass.qrCode)
+        } else {
+            Text(
+                text = "QR-код недоступен",
+                modifier = Modifier.testTag(TestIds.PASS_QR_HIDDEN)
+            )
+        }
+    }
+}
+
+private fun statusText(status: PassStatus): String {
+    return when (status) {
+        PassStatus.ACTIVE -> "Активен"
+        PassStatus.NOT_STARTED -> "Ещё не действует"
+        PassStatus.EXPIRED -> "Истёк"
+        PassStatus.EXHAUSTED -> "Лимит проходов исчерпан"
+        PassStatus.BLOCKED -> "Заблокирован"
+    }
+}
+
+private fun statusColorId(status: PassStatus): Int {
+    return when (status) {
+        PassStatus.ACTIVE -> R.color.status_active
+        PassStatus.NOT_STARTED -> R.color.status_not_started
+        PassStatus.EXPIRED -> R.color.status_expired
+        PassStatus.EXHAUSTED -> R.color.status_exhausted
+        PassStatus.BLOCKED -> R.color.status_blocked
+    }
 }
