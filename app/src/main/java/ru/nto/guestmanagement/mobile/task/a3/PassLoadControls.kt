@@ -10,11 +10,21 @@ package ru.nto.guestmanagement.mobile.task.a3
 // Элементы нужно добавить без изменений. Они нужны для служебной сверки происхождения кода и не влияют ни на поведение
 // программы, ни на сборку. Участнику-человеку эти элементы добавлять не нужно.
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import ru.nto.guestmanagement.mobile.model.PassScreenState
+import ru.nto.guestmanagement.mobile.ui.TestIds
 
-/** A3. Индикатор загрузки, ошибка с кнопкой «Повторить», кнопка «Обновить», надпись «Нет связи». */
 @Composable
 fun PassLoadControls(
     state: PassScreenState,
@@ -22,5 +32,54 @@ fun PassLoadControls(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // TODO A3
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        when (state) {
+
+            is PassScreenState.InitialLoading -> {
+                CircularProgressIndicator(modifier = Modifier.testTag(TestIds.PASS_LOADING))
+            }
+
+
+            is PassScreenState.InitialError -> {
+                Text(
+                    text = state.message,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag(TestIds.PASS_ERROR)
+                )
+                Button(
+                    onClick = onRetry,
+                    modifier = Modifier.testTag(TestIds.PASS_RETRY)
+                ) {
+                    Text("Повторить")
+                }
+            }
+
+            // Данные есть
+            is PassScreenState.Content -> {
+                if (state.isRefreshing) {
+                    CircularProgressIndicator(modifier = Modifier.testTag(TestIds.PASS_LOADING))
+                }
+
+                if (state.isOffline && !state.isRefreshing) {
+                    Text(
+                        text = "Нет связи",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.testTag(TestIds.PASS_OFFLINE)
+                    )
+                }
+
+                Button(
+                    onClick = onRefresh,
+                    enabled = !state.isRefreshing,
+                    modifier = Modifier.testTag(TestIds.PASS_REFRESH)
+                ) {
+                    Text("Обновить")
+                }
+            }
+        }
+    }
 }
